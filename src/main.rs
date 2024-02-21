@@ -33,23 +33,23 @@ async fn main() -> Result<(), Box<dyn Error>> {
 
     // Discover all GPUs and Generate GPU objects to serve
     let mut gpu_obj_paths: Vec<String> = Vec::new();
-    for mut card in get_gpus() {
+    for mut card in get_gpus().await {
         // Build the DBus object path for this card
-        let card_name = card.name().as_str().title();
-        let gpu_path = card.gpu_path();
+        let card_name = card.gpu_name().await.as_str().title();
+        let gpu_path = card.gpu_path().await;
         gpu_obj_paths.push(gpu_path.clone());
 
         // Get the TDP interface from the card and serve it on DBus
-        let tdp = card.get_tdp_interface();
+        let tdp = card.get_tdp_interface().await;
         if tdp.is_some() {
             log::debug!("Discovered TDP interface on card: {}", card_name);
             let tdp = tdp.unwrap();
-            connection.object_server().at(gpu_path.clone(), tdp).await?;
+            connection.object_server().at(gpu_path.clone(), *tdp).await?;
         }
 
         // Get GPU connectors from the card and serve them on DBus
         let mut connector_paths: Vec<String> = Vec::new();
-        let connectors = get_connectors(card.name());
+        let connectors = get_connectors(card.gpu_name().await);
         for connector in connectors {
             let name = connector.name.clone().replace('-', "/");
             let port_path = format!("{0}/{1}", gpu_path, name);

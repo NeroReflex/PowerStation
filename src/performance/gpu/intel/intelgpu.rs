@@ -37,7 +37,7 @@ impl GPUIface for IntelGPU {
     }
 
     /// Returns the TDP DBus interface for this GPU
-    fn get_tdp_interface(&self) -> Option<Arc<Mutex<impl TDPDevice>>> {
+    fn get_tdp_interface(&self) -> Option<Arc<Mutex<dyn TDPDevice>>> {
         match self.class.as_str() {
             "integrated" => Some(
                 Arc::new(
