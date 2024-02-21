@@ -22,7 +22,7 @@ pub type GPUResult<T> = Result<T, GPUError>;
 /// Represents the data contained in /sys/class/drm/cardX
 pub trait GPUIface: Send + Sync {
 
-    fn get_tdp_interface(&self) -> Option<Arc<Mutex<dyn TDPDevice>>>;
+    fn get_tdp_interface(&self) -> Option<Arc<Mutex<impl TDPDevice>>>;
 
     fn get_gpu_path(&self) -> String;
 

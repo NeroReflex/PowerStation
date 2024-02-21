@@ -38,7 +38,7 @@ impl GPUIface for AMDGPU {
     }
 
     /// Returns the TDP DBus interface for this GPU
-    fn get_tdp_interface(&self) -> Option<Arc<Mutex<dyn TDPDevice>>> {
+    fn get_tdp_interface(&self) -> Option<Arc<Mutex<impl TDPDevice>>> {
         // if asusd is present, or asus-wmi is present this is where it is bound to the GPU
         match self.class.as_str() {
             "integrated" => match ASUS::new() {

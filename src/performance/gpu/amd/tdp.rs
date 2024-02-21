@@ -2,8 +2,6 @@ use libryzenadj::RyzenAdj;
 
 use crate::performance::gpu::tdp::{TDPDevice, TDPError, TDPResult};
 
-use tokio::task::JoinHandle;
-
 /// Steam Deck GPU ID
 const DEV_ID_VANGOGH: &str = "163f";
 
@@ -224,20 +222,17 @@ impl TDP {
 
 impl TDPDevice for TDP {
 
-    fn tdp(&self) -> JoinHandle<TDPResult<f64>> {
-        tokio::spawn(
-            async move {
-                // Get the current stapm limit from ryzenadj
-                match TDP::get_stapm_limit(&self) {
-                    Ok(result) => Ok(result.into()),
-                    Err(err) => Err(TDPError::FailedOperation(err.to_string()))
-                }
+    fn tdp(&self) -> impl std::future::Future<Output = TDPResult<f64>> {
+        async move {
+            // Get the current stapm limit from ryzenadj
+            match TDP::get_stapm_limit(&self) {
+                Ok(result) => Ok(result.into()),
+                Err(err) => Err(TDPError::FailedOperation(err.to_string()))
             }
-        )
+        }
     }
 
-    fn set_tdp(&mut self, value: f64) -> JoinHandle<TDPResult<()>> {
-        tokio::spawn(
+    fn set_tdp(&mut self, value: f64) -> impl std::future::Future<Output = TDPResult<()>> {
         async move {
             log::debug!("Setting TDP to: {}", value);
             if value < 1.0 {
@@ -276,83 +271,72 @@ impl TDPDevice for TDP {
             TDP::set_ppt_limit_fast(self, fast_ppt_limit).map_err(|err| TDPError::FailedOperation(err))?;
 
             Ok(())
-        })
+        }
     }
 
-    fn boost(&self) -> JoinHandle<TDPResult<f64>> {
-        tokio::spawn(
-            async move {
-                let fast_ppt_limit =
-                    TDP::get_ppt_limit_fast(&self).map_err(|err| TDPError::FailedOperation(String::from(err)))?;
-                let fast_ppt_limit = fast_ppt_limit as f64;
-                let stapm_limit =
-                    TDP::get_stapm_limit(&self).map_err(|err| TDPError::FailedOperation(String::from(err)))?;
-                let stapm_limit = stapm_limit as f64;
+    fn boost(&self) -> impl std::future::Future<Output = TDPResult<f64>> {
+        async move {
+            let fast_ppt_limit =
+                TDP::get_ppt_limit_fast(&self).map_err(|err| TDPError::FailedOperation(String::from(err)))?;
+            let fast_ppt_limit = fast_ppt_limit as f64;
+            let stapm_limit =
+                TDP::get_stapm_limit(&self).map_err(|err| TDPError::FailedOperation(String::from(err)))?;
+            let stapm_limit = stapm_limit as f64;
 
-                let boost = fast_ppt_limit - stapm_limit;
+            let boost = fast_ppt_limit - stapm_limit;
 
-                Ok(boost)
+            Ok(boost)
+        }
+    }
+
+    fn set_boost(&mut self, value: f64) -> impl std::future::Future<Output = TDPResult<()>> {
+        async move {
+            log::debug!("Setting boost to: {}", value);
+            if value < 0.0 {
+                log::warn!("Cowardly refusing to set TDP Boost less than 0W");
+                return Err(TDPError::InvalidArgument(format!("Cowardly refusing to set TDP Boost less than 0W: {}W provided", value)));
             }
-        )
+
+            // Get the STAPM Limit so we can calculate what Fast PPT Limit to set.
+            let stapm_limit = TDP::get_stapm_limit(&self).map_err(|err| TDPError::FailedOperation(err))?;
+            let stapm_limit = stapm_limit as f64;
+
+            // Set the new fast ppt limit
+            let fast_ppt_limit = ((stapm_limit + value) * 1000.0) as u32;
+            TDP::set_ppt_limit_fast(self, fast_ppt_limit).map_err(|err| TDPError::FailedOperation(err))?;
+
+            Ok(())
+        }
     }
 
-    fn set_boost(&mut self, value: f64) -> JoinHandle<TDPResult<()>> {
-        tokio::spawn(
-            async move {
-                log::debug!("Setting boost to: {}", value);
-                if value < 0.0 {
-                    log::warn!("Cowardly refusing to set TDP Boost less than 0W");
-                    return Err(TDPError::InvalidArgument(format!("Cowardly refusing to set TDP Boost less than 0W: {}W provided", value)));
-                }
-
-                // Get the STAPM Limit so we can calculate what Fast PPT Limit to set.
-                let stapm_limit = TDP::get_stapm_limit(&self).map_err(|err| TDPError::FailedOperation(err))?;
-                let stapm_limit = stapm_limit as f64;
-
-                // Set the new fast ppt limit
-                let fast_ppt_limit = ((stapm_limit + value) * 1000.0) as u32;
-                TDP::set_ppt_limit_fast(self, fast_ppt_limit).map_err(|err| TDPError::FailedOperation(err))?;
-
-                Ok(())
-            }
-        )
+    fn thermal_throttle_limit_c(&self) -> impl std::future::Future<Output = TDPResult<f64>> {
+        async move {
+            let limit = TDP::get_thm_limit(&self).map_err(|err| TDPError::FailedOperation(err.to_string()))?;
+            Ok(limit.into())
+        }
     }
 
-    fn thermal_throttle_limit_c(&self) -> JoinHandle<TDPResult<f64>> {
-        tokio::spawn(
-            async move {
-                let limit = TDP::get_thm_limit(&self).map_err(|err| TDPError::FailedOperation(err.to_string()))?;
-                Ok(limit.into())
-            }
-        )
+    fn set_thermal_throttle_limit_c(&mut self, limit: f64) -> impl std::future::Future<Output = TDPResult<()>> {
+        async move {
+            log::debug!("Setting thermal throttle limit to: {}", limit);
+            let limit = limit as u32;
+            TDP::set_thm_limit(self, limit).map_err(|err| TDPError::FailedOperation(err.to_string()))
+        }
     }
 
-    fn set_thermal_throttle_limit_c(&mut self, limit: f64) -> JoinHandle<TDPResult<()>> {
-        tokio::spawn(
-            async move {
-                log::debug!("Setting thermal throttle limit to: {}", limit);
-                let limit = limit as u32;
-                TDP::set_thm_limit(self, limit).map_err(|err| TDPError::FailedOperation(err.to_string()))
-            }
-        )
+    fn power_profile(&self) -> impl std::future::Future<Output = TDPResult<String>> {
+        async move {
+            Ok(self.profile.clone())
+        }
     }
 
-    fn power_profile(&self) -> JoinHandle<TDPResult<String>> {
-        tokio::spawn(
-            async move {
-                Ok(self.profile.clone())
-            }
-        )
-    }
-
-    fn set_power_profile(&mut self, profile: String) -> JoinHandle<TDPResult<()>> {
-        tokio::spawn(
+    fn set_power_profile(&mut self, profile: String) -> impl std::future::Future<Output = TDPResult<()>> {
         async move {
             log::debug!("Setting power profile to: {}", profile);
             TDP::set_power_profile(&self, profile.clone())
                 .map_err(|err| TDPError::FailedOperation(err.to_string()))?;
             self.profile = profile;
             Ok(())
-        })
+        }
     }
 }

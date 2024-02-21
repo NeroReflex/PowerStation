@@ -1,9 +1,8 @@
 use std::sync::Arc;
+use std::sync::Mutex;
 use zbus::fdo::Error;
 use zbus::fdo;
 use zbus_macros::dbus_interface;
-
-use tokio::sync::Mutex;
 
 use crate::performance::gpu::tdp::TDPError;
 use crate::performance::gpu::tdp::{TDPDevice, TDPResult};
@@ -24,7 +23,7 @@ impl Into<fdo::Error> for TDPError {
 }
 
 impl GPUTDPDBusIface {
-    pub fn new(dev: Arc<Mutex<dyn TDPDevice>>) -> GPUTDPDBusIface {
+    pub fn new(dev: Arc<Mutex<impl TDPDevice>>) -> GPUTDPDBusIface {
         GPUTDPDBusIface {
             dev
         }
@@ -36,109 +35,125 @@ impl GPUTDPDBusIface {
 
     /// Get the currently set TDP value
     #[dbus_interface(property, name = "TDP")]
-    async fn tdp(&self) -> fdo::Result<f64> {
-        match self.dev.lock().await.tdp().await {
-            Ok(exec_res) => match exec_res {
-                TDPResult::Ok(result) => Ok(result),
-                TDPResult::Err(err) => Err(err.into())
+    fn tdp(&self) -> fdo::Result<f64> {
+        match self.dev.lock() {
+            Ok(lck) => {
+                match lck.tdp() {
+                    TDPResult::Ok(result) => Ok(result),
+                    TDPResult::Err(err) => Err(err.into())
+                }
             },
-            Err(err) => Err(fdo::Error::Failed(
-                format!("Error getting TDP: {:?}", err),
-            )),
+            Err(err) => {
+                Err(Error::Failed(format!("Unable to lock mutex: {}", err)))
+            }
         }
     }
 
     /// Sets the given TDP value
     #[dbus_interface(property, name = "TDP")]
-    async fn set_tdp(&mut self, value: f64) -> fdo::Result<()> {
-        match self.dev.lock().await.set_tdp(value).await {
-            Ok(exec_res) => match exec_res {
-                TDPResult::Ok(result) => Ok(result),
-                TDPResult::Err(err) => Err(err.into())
+    fn set_tdp(&mut self, value: f64) -> fdo::Result<()> {
+        match self.dev.lock() {
+            Ok(mut lck) => {
+                match lck.set_tdp(value) {
+                    TDPResult::Ok(result) => Ok(result),
+                    TDPResult::Err(err) => Err(err.into())
+                }
             },
-            Err(err) => Err(fdo::Error::Failed(
-                format!("Error getting TDP: {:?}", err),
-            )),
+            Err(err) => {
+                Err(Error::Failed(format!("Unable to lock mutex: {}", err)))
+            }
         }
     }
 
     /// The TDP boost for AMD is the total difference between the Fast PPT Limit
     /// and the STAPM limit.
     #[dbus_interface(property)]
-    async fn boost(&self) -> fdo::Result<f64> {
-        match self.dev.lock().await.boost().await {
-            Ok(exec_res) => match exec_res {
-                TDPResult::Ok(result) => Ok(result),
-                TDPResult::Err(err) => Err(err.into())
+    fn boost(&self) -> fdo::Result<f64> {
+        match self.dev.lock() {
+            Ok(lck) => {
+                match lck.boost() {
+                    TDPResult::Ok(result) => Ok(result),
+                    TDPResult::Err(err) => Err(err.into())
+                }
             },
-            Err(err) => Err(fdo::Error::Failed(
-                format!("Error getting TDP: {:?}", err),
-            )),
+            Err(err) => {
+                Err(Error::Failed(format!("Unable to lock mutex: {}", err)))
+            }
         }
     }
 
     #[dbus_interface(property)]
-    async fn set_boost(&mut self, value: f64) -> fdo::Result<()> {
-        match self.dev.lock().await.set_boost(value).await {
-            Ok(exec_res) => match exec_res {
-                TDPResult::Ok(result) => Ok(result),
-                TDPResult::Err(err) => Err(err.into())
+    fn set_boost(&mut self, value: f64) -> fdo::Result<()> {
+        match self.dev.lock() {
+            Ok(mut lck) => {
+                match lck.set_boost(value) {
+                    TDPResult::Ok(result) => Ok(result),
+                    TDPResult::Err(err) => Err(err.into())
+                }
             },
-            Err(err) => Err(fdo::Error::Failed(
-                format!("Error getting TDP: {:?}", err),
-            )),
+            Err(err) => {
+                Err(Error::Failed(format!("Unable to lock mutex: {}", err)))
+            }
         }
     }
 
     #[dbus_interface(property)]
-    async fn thermal_throttle_limit_c(&self) -> fdo::Result<f64> {
-        match self.dev.lock().await.thermal_throttle_limit_c().await {
-            Ok(exec_res) => match exec_res {
-                TDPResult::Ok(result) => Ok(result),
-                TDPResult::Err(err) => Err(err.into())
+    fn thermal_throttle_limit_c(&self) -> fdo::Result<f64> {
+        match self.dev.lock() {
+            Ok(lck) => {
+                match lck.thermal_throttle_limit_c() {
+                    TDPResult::Ok(result) => Ok(result),
+                    TDPResult::Err(err) => Err(err.into())
+                }
             },
-            Err(err) => Err(fdo::Error::Failed(
-                format!("Error getting TDP: {:?}", err),
-            )),
+            Err(err) => {
+                Err(Error::Failed(format!("Unable to lock mutex: {}", err)))
+            }
         }
     }
 
     #[dbus_interface(property)]
-    async fn set_thermal_throttle_limit_c(&mut self, limit: f64) -> fdo::Result<()> {
-        match self.dev.lock().await.set_thermal_throttle_limit_c(limit).await {
-            Ok(exec_res) => match exec_res {
-                TDPResult::Ok(result) => Ok(result),
-                TDPResult::Err(err) => Err(err.into())
+    fn set_thermal_throttle_limit_c(&mut self, limit: f64) -> fdo::Result<()> {
+        match self.dev.lock() {
+            Ok(mut lck) => {
+                match lck.set_thermal_throttle_limit_c(limit) {
+                    TDPResult::Ok(result) => Ok(result),
+                    TDPResult::Err(err) => Err(err.into())
+                }
             },
-            Err(err) => Err(fdo::Error::Failed(
-                format!("Error getting TDP: {:?}", err),
-            )),
+            Err(err) => {
+                Err(Error::Failed(format!("Unable to lock mutex: {}", err)))
+            }
         }
     }
 
     #[dbus_interface(property)]
-    async fn power_profile(&self) -> fdo::Result<String> {
-        match self.dev.lock().await.power_profile().await {
-            Ok(exec_res) => match exec_res {
-                TDPResult::Ok(result) => Ok(result),
-                TDPResult::Err(err) => Err(err.into())
+    fn power_profile(&self) -> fdo::Result<String> {
+        match self.dev.lock() {
+            Ok(lck) => {
+                match lck.power_profile() {
+                    TDPResult::Ok(result) => Ok(result),
+                    TDPResult::Err(err) => Err(err.into())
+                }
             },
-            Err(err) => Err(fdo::Error::Failed(
-                format!("Error getting TDP: {:?}", err),
-            )),
+            Err(err) => {
+                Err(Error::Failed(format!("Unable to lock mutex: {}", err)))
+            }
         }
     }
 
     #[dbus_interface(property)]
-    async fn set_power_profile(&mut self, profile: String) -> fdo::Result<()> {
-        match self.dev.lock().await.set_power_profile(profile).await {
-            Ok(exec_res) => match exec_res {
-                TDPResult::Ok(result) => Ok(result),
-                TDPResult::Err(err) => Err(err.into())
+    fn set_power_profile(&mut self, profile: String) -> fdo::Result<()> {
+        match self.dev.lock() {
+            Ok(mut lck) => {
+                match lck.set_power_profile(profile) {
+                    TDPResult::Ok(result) => Ok(result),
+                    TDPResult::Err(err) => Err(err.into())
+                }
             },
-            Err(err) => Err(fdo::Error::Failed(
-                format!("Error getting TDP: {:?}", err),
-            )),
+            Err(err) => {
+                Err(Error::Failed(format!("Unable to lock mutex: {}", err)))
+            }
         }
     }
 

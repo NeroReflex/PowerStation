@@ -1,11 +1,9 @@
 use std::fs::{self, File};
 use std::io::{prelude::*, BufReader};
-use std::sync::Arc;
+use std::sync::{Arc, Mutex};
 use zbus::fdo;
 use zbus::zvariant::ObjectPath;
 use zbus_macros::dbus_interface;
-
-use tokio::sync::Mutex;
 
 use crate::performance::gpu::interface::{GPUError, GPUIface};
 use crate::performance::gpu::dbus::tdp::GPUTDPDBusIface;
@@ -31,32 +29,28 @@ impl Into<fdo::Error> for GPUError {
 #[derive(Clone)]
 pub struct GPUDBusInterface {
     connector_paths: Vec<String>,
-    gpu_obj: Arc<Mutex<dyn GPUIface>>
+    gpu_obj: Arc<Mutex<impl GPUIface>>
 }
 
 impl GPUDBusInterface {
-    pub async fn new(gpu: Arc<Mutex<dyn GPUIface>>) -> Self {
+    pub fn new(gpu: Arc<Mutex<impl GPUIface>>) -> Self {
         Self {
             gpu_obj: gpu,
             connector_paths: vec![]
         }
     }
 
-    pub async fn gpu_name(&self) -> String {
-        self.gpu_obj.lock().await.name()
+    pub fn gpu_path(&self) -> String {
+        self.gpu_obj.lock().unwrap().get_gpu_path()
     }
 
-    pub async fn gpu_path(&self) -> String {
-        self.gpu_obj.lock().await.get_gpu_path()
-    }
-
-    pub async fn set_connector_paths(&mut self, connector_paths: Vec<String>) {
+    pub fn set_connector_paths(&mut self, connector_paths: Vec<String>) {
         self.connector_paths = connector_paths
     }
 
-    pub async fn get_tdp_interface(&self) -> Option<Box<GPUTDPDBusIface>> {
-        match self.gpu_obj.lock().await.get_tdp_interface() {
-            Some(tdp) => Some(Box::new(GPUTDPDBusIface::new(tdp))),
+    pub fn get_tdp_interface(&self) -> Option<GPUTDPDBusIface> {
+        match self.gpu_obj.lock().unwrap().get_tdp_interface() {
+            Some(tdp) => Some(GPUTDPDBusIface::new(tdp)),
             None => None
         }
     }
@@ -66,7 +60,7 @@ impl GPUDBusInterface {
 impl GPUDBusInterface {
     
     /// Returns a list of DBus paths to all connectors
-    pub async fn enumerate_connectors(&self) -> fdo::Result<Vec<ObjectPath>> {
+    pub fn enumerate_connectors(&self) -> fdo::Result<Vec<ObjectPath>> {
         Ok(
             self.connector_paths
                 .iter()
@@ -76,103 +70,103 @@ impl GPUDBusInterface {
     }
 
     #[dbus_interface(property)]
-    pub async fn name(&self) -> String {
-        self.gpu_obj.lock().await.name()
+    pub fn name(&self) -> String {
+        self.gpu_obj.lock().unwrap().name()
     }
 
     #[dbus_interface(property)]
-    async fn path(&self) -> String {
-        self.gpu_obj.lock().await.path()
+    fn path(&self) -> String {
+        self.gpu_obj.lock().unwrap().path()
     }
 
     #[dbus_interface(property)]
-    async fn class(&self) -> String {
-        self.gpu_obj.lock().await.class()
+    fn class(&self) -> String {
+        self.gpu_obj.lock().unwrap().class()
     }
 
     #[dbus_interface(property)]
-    async fn class_id(&self) -> String {
-        self.gpu_obj.lock().await.class_id()
+    fn class_id(&self) -> String {
+        self.gpu_obj.lock().unwrap().class_id()
     }
 
     #[dbus_interface(property)]
-    async fn vendor(&self) -> String {
-        self.gpu_obj.lock().await.vendor()
+    fn vendor(&self) -> String {
+        self.gpu_obj.lock().unwrap().vendor()
     }
 
     #[dbus_interface(property)]
-    async fn vendor_id(&self) -> String {
-        self.gpu_obj.lock().await.vendor_id()
+    fn vendor_id(&self) -> String {
+        self.gpu_obj.lock().unwrap().vendor_id()
     }
 
     #[dbus_interface(property)]
-    async fn device(&self) -> String {
-        self.gpu_obj.lock().await.device()
+    fn device(&self) -> String {
+        self.gpu_obj.lock().unwrap().device()
     }
 
     #[dbus_interface(property)]
-    async fn device_id(&self) -> String {
-        self.gpu_obj.lock().await.device_id()
+    fn device_id(&self) -> String {
+        self.gpu_obj.lock().unwrap().device_id()
     }
 
     #[dbus_interface(property)]
-    async fn subdevice(&self) -> String {
-        self.gpu_obj.lock().await.subdevice()
+    fn subdevice(&self) -> String {
+        self.gpu_obj.lock().unwrap().subdevice()
     }
 
     #[dbus_interface(property)]
-    async fn subdevice_id(&self) -> String {
-        self.gpu_obj.lock().await.subdevice_id()
+    fn subdevice_id(&self) -> String {
+        self.gpu_obj.lock().unwrap().subdevice_id()
     }
 
     #[dbus_interface(property)]
-    async fn subvendor_id(&self) -> String {
-        self.gpu_obj.lock().await.subvendor_id()
+    fn subvendor_id(&self) -> String {
+        self.gpu_obj.lock().unwrap().subvendor_id()
     }
 
     #[dbus_interface(property)]
-    async fn revision_id(&self) -> String {
-        self.gpu_obj.lock().await.revision_id()
+    fn revision_id(&self) -> String {
+        self.gpu_obj.lock().unwrap().revision_id()
     }
 
     #[dbus_interface(property)]
-    async fn clock_limit_mhz_min(&self) -> fdo::Result<f64> {
-        self.gpu_obj.lock().await.clock_limit_mhz_min().map_err(|err| err.into())
+    fn clock_limit_mhz_min(&self) -> fdo::Result<f64> {
+        self.gpu_obj.lock().unwrap().clock_limit_mhz_min().map_err(|err| err.into())
     }
 
     #[dbus_interface(property)]
-    async fn clock_limit_mhz_max(&self) -> fdo::Result<f64> {
-        self.gpu_obj.lock().await.clock_limit_mhz_max().map_err(|err| err.into())
+    fn clock_limit_mhz_max(&self) -> fdo::Result<f64> {
+        self.gpu_obj.lock().unwrap().clock_limit_mhz_max().map_err(|err| err.into())
     }
 
     #[dbus_interface(property)]
-    async fn clock_value_mhz_min(&self) -> fdo::Result<f64> {
-        self.gpu_obj.lock().await.clock_value_mhz_min().map_err(|err| err.into())
+    fn clock_value_mhz_min(&self) -> fdo::Result<f64> {
+        self.gpu_obj.lock().unwrap().clock_value_mhz_min().map_err(|err| err.into())
     }
 
     #[dbus_interface(property)]
-    async fn set_clock_value_mhz_min(&mut self, value: f64) -> fdo::Result<()> {
-        self.gpu_obj.lock().await.set_clock_value_mhz_min(value).map_err(|err| err.into())
+    fn set_clock_value_mhz_min(&mut self, value: f64) -> fdo::Result<()> {
+        self.gpu_obj.lock().unwrap().set_clock_value_mhz_min(value).map_err(|err| err.into())
     }
 
     #[dbus_interface(property)]
-    async fn clock_value_mhz_max(&self) -> fdo::Result<f64> {
-        self.gpu_obj.lock().await.clock_value_mhz_max().map_err(|err| err.into())
+    fn clock_value_mhz_max(&self) -> fdo::Result<f64> {
+        self.gpu_obj.lock().unwrap().clock_value_mhz_max().map_err(|err| err.into())
     }
 
     #[dbus_interface(property)]
-    async fn set_clock_value_mhz_max(&mut self, value: f64) -> fdo::Result<()> {
-        self.gpu_obj.lock().await.set_clock_value_mhz_max(value).map_err(|err| err.into())
+    fn set_clock_value_mhz_max(&mut self, value: f64) -> fdo::Result<()> {
+        self.gpu_obj.lock().unwrap().set_clock_value_mhz_max(value).map_err(|err| err.into())
     }
 
     #[dbus_interface(property)]
-    async fn manual_clock(&self) -> fdo::Result<bool> {
-        self.gpu_obj.lock().await.manual_clock().map_err(|err| err.into())
+    fn manual_clock(&self) -> fdo::Result<bool> {
+        self.gpu_obj.lock().unwrap().manual_clock().map_err(|err| err.into())
     }
 
     #[dbus_interface(property)]
-    async fn set_manual_clock(&mut self, enabled: bool) -> fdo::Result<()> {
-        self.gpu_obj.lock().await.set_manual_clock(enabled).map_err(|err| err.into())
+    fn set_manual_clock(&mut self, enabled: bool) -> fdo::Result<()> {
+        self.gpu_obj.lock().unwrap().set_manual_clock(enabled).map_err(|err| err.into())
     }
 }
 
@@ -201,12 +195,12 @@ impl GPUBus {
             paths.push(path);
         }
 
-        Ok(paths)
+        return Ok(paths);
     }
 }
 
 /// Returns a list of all detected gpu devices
-pub async fn get_gpus() -> Vec<GPUDBusInterface> {
+pub fn get_gpus() -> Vec<GPUDBusInterface> {
     let mut gpus = vec![];
     let paths = fs::read_dir(DRM_PATH).unwrap();
     for path in paths {
@@ -222,7 +216,7 @@ pub async fn get_gpus() -> Vec<GPUDBusInterface> {
         }
 
         log::info!("Discovered gpu: {}", file_path);
-        let gpu = get_gpu(file_path).await;
+        let gpu = get_gpu(file_path);
         if gpu.is_err() {
             continue;
         }
@@ -234,7 +228,7 @@ pub async fn get_gpus() -> Vec<GPUDBusInterface> {
 }
 
 /// Returns the GPU instance for the given path in /sys/class/drm
-pub async fn get_gpu(path: String) -> Result<GPUDBusInterface, std::io::Error> {
+pub fn get_gpu(path: String) -> Result<GPUDBusInterface, std::io::Error> {
     let filename = path.split("/").last().unwrap();
     let file_prefix = format!("{0}/{1}", path, "device");
     let class_id = fs::read_to_string(format!("{0}/{1}", file_prefix, "class"))?
@@ -366,7 +360,7 @@ pub async fn get_gpu(path: String) -> Result<GPUDBusInterface, std::io::Error> {
                         }
                     )
                 )
-            ).await
+            )
         ),
         // Intel Implementation
         "Intel" | "GenuineIntel" | "Intel Corporation" => Ok(
@@ -391,7 +385,7 @@ pub async fn get_gpu(path: String) -> Result<GPUDBusInterface, std::io::Error> {
                         }
                     )
                 )
-            ).await
+            )
         ),
         _ => {
             Err(std::io::Error::new(

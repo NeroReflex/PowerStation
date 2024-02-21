@@ -5,8 +5,6 @@ use crate::performance::gpu::tdp::{TDPDevice, TDPResult, TDPError};
 
 use zbus::{Connection, Result};
 
-use tokio::task::JoinHandle;
-
 use rog_dbus::{RogDbusClient, RogDbusClientBlocking};
 use rog_dbus::DbusProxies;
 use rog_platform::{platform::RogPlatform, error::PlatformError};
@@ -41,60 +39,57 @@ impl ASUS {
 }
 
 impl TDPDevice for ASUS {
-    fn tdp(&self) -> JoinHandle<TDPResult<f64>> {
-        tokio::spawn(
-            async move {
-            match RogDbusClientBlocking::new() {
-                Ok((dbus, _)) => {
-                    
-                    let supported_properties = dbus.proxies().platform().supported_properties().unwrap();
-                    let supported_interfaces = dbus.proxies().platform().supported_interfaces().unwrap();
-                    
+    fn tdp(&self) -> impl std::future::Future<Output = TDPResult<f64>> {
+        match RogDbusClientBlocking::new() {
+            Ok((dbus, _)) => {
+                
+                let supported_properties = dbus.proxies().platform().supported_properties().unwrap();
+                let supported_interfaces = dbus.proxies().platform().supported_interfaces().unwrap();
+                
 
-                    match dbus.proxies().platform().ppt_apu_sppt() {
-                        Ok(result) => {
-                            log::info!("Initial ppt_apu_sppt: {}", result);
-                            Ok(result as f64)
-                        },
-                        Err(err) => {
-                            log::warn!("Error fetching ppt_apu_sppt: {}", err);
-                            Err(TDPError::FailedOperation(format!("")))
-                        }
+                match dbus.proxies().platform().ppt_apu_sppt() {
+                    Ok(result) => {
+                        log::info!("Initial ppt_apu_sppt: {}", result);
+                        Ok(result as f64)
+                    },
+                    Err(err) => {
+                        log::warn!("Error fetching ppt_apu_sppt: {}", err);
+                        Err(TDPError::FailedOperation(format!("")))
                     }
-                },
-                Err(err) => {
-                    log::warn!("Unable to use asusd to read tdp, asus-wmi interface will be used");
-                    Err(TDPError::FailedOperation(format!("")))
                 }
+            },
+            Err(err) => {
+                log::warn!("Unable to use asusd to read tdp, asus-wmi interface will be used");
+                Err(TDPError::FailedOperation(format!("")))
             }
-        })
+        }
     }
 
-    fn set_tdp(&mut self, value: f64) -> JoinHandle<TDPResult<()>> {
+    async fn set_tdp(&mut self, value: f64) -> TDPResult<()> {
         todo!()
     }
 
-    fn boost(&self) -> JoinHandle<TDPResult<f64>> {
+    async fn boost(&self) -> TDPResult<f64> {
         todo!()
     }
 
-    fn set_boost(&mut self, value: f64) -> JoinHandle<TDPResult<()>> {
+    async fn set_boost(&mut self, value: f64) -> TDPResult<()> {
         todo!()
     }
 
-    fn thermal_throttle_limit_c(&self) -> JoinHandle<TDPResult<f64>> {
+    async fn thermal_throttle_limit_c(&self) -> TDPResult<f64> {
         todo!()
     }
 
-    fn set_thermal_throttle_limit_c(&mut self, limit: f64) -> JoinHandle<TDPResult<()>> {
+    async fn set_thermal_throttle_limit_c(&mut self, limit: f64) -> TDPResult<()> {
         todo!()
     }
 
-    fn power_profile(&self) -> JoinHandle<TDPResult<String>> {
+    async fn power_profile(&self) -> TDPResult<String> {
         todo!()
     }
 
-    fn set_power_profile(&mut self, profile: String) -> JoinHandle<TDPResult<()>> {
+    async fn set_power_profile(&mut self, profile: String) -> TDPResult<()> {
         todo!()
     }
 
