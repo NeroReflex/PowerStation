@@ -5,7 +5,7 @@ use crate::performance::gpu::tdp::{TDPDevice, TDPResult, TDPError};
 
 use zbus::{Connection, Result};
 
-use rog_dbus::{RogDbusClient, RogDbusClientBlocking};
+use rog_dbus::RogDbusClientBlocking;
 use rog_dbus::DbusProxies;
 use rog_platform::{platform::RogPlatform, error::PlatformError};
 use rog_platform::platform::{GpuMode, Properties, ThrottlePolicy};
@@ -24,7 +24,7 @@ impl ASUS {
     pub fn new() -> Option<Self> {
         match RogPlatform::new() {
             Ok(platform) => {
-                log::info!("Module asus-wmi has been found and will be used as a fallback");
+                log::info!("Module asus-wmi WAS found");
                 Some(Self {
                     platform: Arc::new(Mutex::new(platform))
                 })
@@ -39,7 +39,7 @@ impl ASUS {
 }
 
 impl TDPDevice for ASUS {
-    fn tdp(&self) -> impl std::future::Future<Output = TDPResult<f64>> {
+    fn tdp(&self) -> TDPResult<f64> {
         match RogDbusClientBlocking::new() {
             Ok((dbus, _)) => {
                 
@@ -65,31 +65,31 @@ impl TDPDevice for ASUS {
         }
     }
 
-    async fn set_tdp(&mut self, value: f64) -> TDPResult<()> {
+    fn set_tdp(&mut self, value: f64) -> TDPResult<()> {
         todo!()
     }
 
-    async fn boost(&self) -> TDPResult<f64> {
+    fn boost(&self) -> TDPResult<f64> {
         todo!()
     }
 
-    async fn set_boost(&mut self, value: f64) -> TDPResult<()> {
+    fn set_boost(&mut self, value: f64) -> TDPResult<()> {
         todo!()
     }
 
-    async fn thermal_throttle_limit_c(&self) -> TDPResult<f64> {
+    fn thermal_throttle_limit_c(&self) -> TDPResult<f64> {
         todo!()
     }
 
-    async fn set_thermal_throttle_limit_c(&mut self, limit: f64) -> TDPResult<()> {
+    fn set_thermal_throttle_limit_c(&mut self, limit: f64) -> TDPResult<()> {
         todo!()
     }
 
-    async fn power_profile(&self) -> TDPResult<String> {
+    fn power_profile(&self) -> TDPResult<String> {
         todo!()
     }
 
-    async fn set_power_profile(&mut self, profile: String) -> TDPResult<()> {
+    fn set_power_profile(&mut self, profile: String) -> TDPResult<()> {
         todo!()
     }
 
