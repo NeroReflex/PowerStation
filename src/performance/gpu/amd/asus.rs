@@ -66,7 +66,7 @@ impl TDPDevice for ASUS {
     }
 
     async fn set_tdp(&mut self, value: f64) -> TDPResult<()> {
-        println!("Set fake TDP of {}", value);
+        log::error!("Set fake TDP of {}", value);
         
         Ok(())
     }
