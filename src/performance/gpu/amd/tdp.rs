@@ -1,7 +1,6 @@
 use libryzenadj::RyzenAdj;
 
 use crate::performance::gpu::tdp::{TDPDevice, TDPError, TDPResult};
-use crate::performance::gpu::dbus::devices::TDPDevices;
 
 /// Steam Deck GPU ID
 const DEV_ID_VANGOGH: &str = "163f";

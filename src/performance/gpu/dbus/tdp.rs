@@ -1,5 +1,4 @@
 use std::sync::Arc;
-use zbus::fdo::Error;
 use zbus::fdo;
 use zbus_macros::dbus_interface;
 

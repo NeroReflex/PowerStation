@@ -1,16 +1,13 @@
 use std::sync::Arc;
-use udev::{Enumerator, Device};
 
 use crate::performance::gpu::tdp::{TDPDevice, TDPResult, TDPError};
-use crate::performance::gpu::dbus::devices::TDPDevices;
 
-use zbus::{Connection, Result};
-
-use rog_dbus::{ RogDbusClientBlocking, RogDbusClient };
-use rog_dbus::DbusProxies;
-use rog_platform::{platform::RogPlatform, error::PlatformError};
+use rog_dbus::RogDbusClient;
+use rog_platform::platform::RogPlatform;
+/*
 use rog_platform::platform::{GpuMode, Properties, ThrottlePolicy};
 use rog_profiles::error::ProfileError;
+*/
 
 use std::sync::Mutex;
 
@@ -23,7 +20,40 @@ pub struct ASUS {
 impl ASUS {
 
     /// test if we are in an asus system with asus-wmi loaded
-    pub fn new() -> Option<Self> {
+    pub async fn new() -> Option<Self> {
+        match RogDbusClient::new().await {
+            Ok((dbus, _)) => {
+                let asus_platform = dbus.proxies().rog_bios();
+
+                match asus_platform.supported_properties().await {
+                    Ok(supported_properties) => {
+                        for prop in supported_properties {
+                            dbg!(prop);
+                        }
+                        
+                    },
+                    Err(err) => {
+                        log::warn!("Unable to query asusd for supported properties: {}", err);
+                    }
+                }
+
+                match asus_platform.supported_interfaces().await {
+                    Ok(supported_properties) => {
+                        for prop in supported_properties {
+                            dbg!(prop);
+                        }
+                        
+                    },
+                    Err(err) => {
+                        log::warn!("Unable to query asusd for supported properties: {}", err);
+                    }
+                }
+            },
+            Err(err) => {
+                log::warn!("Unable to connect to asusd: {} -- asus-wmi may be used instead", err);
+            }
+        };
+
         match RogPlatform::new() {
             Ok(platform) => {
                 log::info!("Module asus-wmi WAS found");
@@ -44,8 +74,9 @@ impl TDPDevice for ASUS {
     async fn tdp(&self) -> TDPResult<f64> {
         match RogDbusClient::new().await {
             Ok((dbus, _)) => {
-                let supported_properties = dbus.proxies().rog_bios().supported_properties().await.unwrap();
-                let supported_interfaces = dbus.proxies().rog_bios().supported_interfaces().await.unwrap();
+                let asus_platform = dbus.proxies().rog_bios();
+                let supported_properties = asus_platform.supported_properties().await.unwrap();
+                let supported_interfaces = asus_platform.supported_interfaces().await.unwrap();
 
                 match dbus.proxies().rog_bios().ppt_apu_sppt().await {
                     Ok(result) => {

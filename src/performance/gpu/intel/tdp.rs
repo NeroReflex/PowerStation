@@ -2,7 +2,6 @@ use std::fs::{self, OpenOptions};
 use std::io::Write;
 
 use crate::performance::gpu::tdp::{TDPDevice, TDPError, TDPResult};
-use crate::performance::gpu::dbus::devices::TDPDevices;
 
 /// Implementation of TDP control for Intel GPUs
 pub struct TDP {
