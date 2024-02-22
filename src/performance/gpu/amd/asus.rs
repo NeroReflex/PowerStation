@@ -59,37 +59,45 @@ impl TDPDevice for ASUS {
                 }
             },
             Err(err) => {
-                log::warn!("Unable to use asusd to read tdp, asus-wmi interface will be used");
+                log::warn!("Unable to use asusd to read tdp: {} -- asus-wmi interface will be used", err);
                 Err(TDPError::FailedOperation(format!("")))
             }
         }
     }
 
     async fn set_tdp(&mut self, value: f64) -> TDPResult<()> {
-        todo!()
+        println!("Set fake TDP of {}", value);
+        
+        Ok(())
     }
 
     async fn boost(&self) -> TDPResult<f64> {
-        todo!()
+        Ok(120.0)
     }
 
     async fn set_boost(&mut self, value: f64) -> TDPResult<()> {
-        todo!()
+        println!("Set fake boost of {}", value);
+        
+        Ok(())
     }
 
     async fn thermal_throttle_limit_c(&self) -> TDPResult<f64> {
-        todo!()
+        Ok(256.0)
     }
 
     async fn set_thermal_throttle_limit_c(&mut self, limit: f64) -> TDPResult<()> {
-        todo!()
+        println!("Set fake thermal throttle limit of {}", limit);
+
+        Ok(())
     }
 
     async fn power_profile(&self) -> TDPResult<String> {
-        todo!()
+        Ok(String::from("max-performance"))
     }
 
     async fn set_power_profile(&mut self, profile: String) -> TDPResult<()> {
-        todo!()
+        println!("Set fake power profile of {}", profile);
+        
+        Ok(())
     }
 }

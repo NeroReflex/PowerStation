@@ -9,8 +9,6 @@ use crate::dbus::gpu::GPUBus;
 use crate::dbus::gpu::get_connectors;
 use crate::dbus::gpu::get_gpus;
 
-use crate::performance::gpu::dbus::gpu::GPUDBusInterface;
-
 mod constants;
 mod performance;
 
@@ -63,7 +61,7 @@ async fn main() -> Result<(), Box<dyn Error>> {
             log::debug!("Discovered connector on {}: {}", card_name, port_path);
             connection.object_server().at(port_path, connector).await?;
         }
-        card.set_connector_paths(connector_paths);
+        card.set_connector_paths(connector_paths).await;
 
         // Serve the GPU interface on DBus
         connection
