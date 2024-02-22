@@ -6,7 +6,7 @@ use crate::performance::gpu::dbus::devices::TDPDevices;
 
 use zbus::{Connection, Result};
 
-use rog_dbus::RogDbusClientBlocking;
+use rog_dbus::{ RogDbusClientBlocking, RogDbusClient };
 use rog_dbus::DbusProxies;
 use rog_platform::{platform::RogPlatform, error::PlatformError};
 use rog_platform::platform::{GpuMode, Properties, ThrottlePolicy};
@@ -42,12 +42,12 @@ impl ASUS {
 
 impl TDPDevice for ASUS {
     async fn tdp(&self) -> TDPResult<f64> {
-        match RogDbusClientBlocking::new() {
+        match RogDbusClient::new().await {
             Ok((dbus, _)) => {
-                let supported_properties = dbus.proxies().platform().supported_properties().unwrap();
-                let supported_interfaces = dbus.proxies().platform().supported_interfaces().unwrap();
+                let supported_properties = dbus.proxies().rog_bios().supported_properties().await.unwrap();
+                let supported_interfaces = dbus.proxies().rog_bios().supported_interfaces().await.unwrap();
 
-                match dbus.proxies().platform().ppt_apu_sppt() {
+                match dbus.proxies().rog_bios().ppt_apu_sppt().await {
                     Ok(result) => {
                         log::info!("Initial ppt_apu_sppt: {}", result);
                         Ok(result as f64)

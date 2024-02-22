@@ -8,7 +8,7 @@ use tokio::sync::Mutex;
 
 use crate::constants::GPU_PATH;
 use crate::performance::gpu::interface::GPUIface;
-use crate::performance::gpu::{amd, tdp::TDPDevice};
+use crate::performance::gpu::amd;
 use crate::performance::gpu::dbus::devices::TDPDevices;
 use crate::performance::gpu::interface::{GPUError, GPUResult};
 
