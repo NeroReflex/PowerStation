@@ -78,10 +78,7 @@ impl TDPDevice for ASUS {
         match RogDbusClient::new().await {
             Ok((dbus, _)) => {
                 let asus_platform = dbus.proxies().rog_bios();
-                let supported_properties = asus_platform.supported_properties().await.unwrap();
-                let supported_interfaces = asus_platform.supported_interfaces().await.unwrap();
-
-                match dbus.proxies().rog_bios().ppt_apu_sppt().await {
+                match asus_platform.ppt_apu_sppt().await {
                     Ok(result) => {
                         log::info!("Initial ppt_apu_sppt: {}", result);
                         Ok(result as f64)
