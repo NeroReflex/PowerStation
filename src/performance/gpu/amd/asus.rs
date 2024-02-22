@@ -21,42 +21,45 @@ impl ASUS {
 
     /// test if we are in an asus system with asus-wmi loaded
     pub async fn new() -> Option<Self> {
-        match RogDbusClient::new().await {
-            Ok((dbus, _)) => {
-                let asus_platform = dbus.proxies().rog_bios();
-
-                match asus_platform.supported_properties().await {
-                    Ok(supported_properties) => {
-                        for prop in supported_properties {
-                            dbg!(prop);
-                        }
-                        
-                    },
-                    Err(err) => {
-                        log::warn!("Unable to query asusd for supported properties: {}", err);
-                    }
-                }
-
-                match asus_platform.supported_interfaces().await {
-                    Ok(supported_properties) => {
-                        for prop in supported_properties {
-                            dbg!(prop);
-                        }
-                        
-                    },
-                    Err(err) => {
-                        log::warn!("Unable to query asusd for supported properties: {}", err);
-                    }
-                }
-            },
-            Err(err) => {
-                log::warn!("Unable to connect to asusd: {} -- asus-wmi may be used instead", err);
-            }
-        };
-
         match RogPlatform::new() {
             Ok(platform) => {
-                log::info!("Module asus-wmi WAS found");
+                log::info!("Module asus-wmi has been found -- scanning the dbus interface...");
+
+                match RogDbusClient::new().await {
+                    Ok((dbus, _)) => {
+                        log::info!("asusd dbus interface available");
+
+                        let asus_platform = dbus.proxies().rog_bios();
+        
+                        match asus_platform.supported_properties().await {
+                            Ok(supported_properties) => {
+                                for prop in supported_properties {
+                                    dbg!(prop);
+                                }
+                                
+                            },
+                            Err(err) => {
+                                log::warn!("Unable to query asusd for supported properties: {}", err);
+                            }
+                        }
+        
+                        match asus_platform.supported_interfaces().await {
+                            Ok(supported_properties) => {
+                                for prop in supported_properties {
+                                    dbg!(prop);
+                                }
+                                
+                            },
+                            Err(err) => {
+                                log::warn!("Unable to query asusd for supported properties: {}", err);
+                            }
+                        }
+                    },
+                    Err(err) => {
+                        log::warn!("Unable to connect to asusd: {} -- asus-wmi may be used instead", err);
+                    }
+                };
+
                 Some(Self {
                     platform: Arc::new(Mutex::new(platform))
                 })
