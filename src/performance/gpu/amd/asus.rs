@@ -1,7 +1,8 @@
-use std::{path::Path, sync::{Arc, Mutex}};
+use std::sync::Arc;
 use udev::{Enumerator, Device};
 
 use crate::performance::gpu::tdp::{TDPDevice, TDPResult, TDPError};
+use crate::performance::gpu::dbus::devices::TDPDevices;
 
 use zbus::{Connection, Result};
 
@@ -11,6 +12,7 @@ use rog_platform::{platform::RogPlatform, error::PlatformError};
 use rog_platform::platform::{GpuMode, Properties, ThrottlePolicy};
 use rog_profiles::error::ProfileError;
 
+use std::sync::Mutex;
 
 /// Implementation of asusd with a fallback to asus-wmi sysfs
 /// See https://www.kernel.org/doc/html/v6.8-rc4/admin-guide/abi-testing.html#abi-sys-devices-platform-platform-ppt-apu-sppt
@@ -39,13 +41,11 @@ impl ASUS {
 }
 
 impl TDPDevice for ASUS {
-    fn tdp(&self) -> TDPResult<f64> {
+    async fn tdp(&self) -> TDPResult<f64> {
         match RogDbusClientBlocking::new() {
             Ok((dbus, _)) => {
-                
                 let supported_properties = dbus.proxies().platform().supported_properties().unwrap();
                 let supported_interfaces = dbus.proxies().platform().supported_interfaces().unwrap();
-                
 
                 match dbus.proxies().platform().ppt_apu_sppt() {
                     Ok(result) => {
@@ -65,32 +65,31 @@ impl TDPDevice for ASUS {
         }
     }
 
-    fn set_tdp(&mut self, value: f64) -> TDPResult<()> {
+    async fn set_tdp(&mut self, value: f64) -> TDPResult<()> {
         todo!()
     }
 
-    fn boost(&self) -> TDPResult<f64> {
+    async fn boost(&self) -> TDPResult<f64> {
         todo!()
     }
 
-    fn set_boost(&mut self, value: f64) -> TDPResult<()> {
+    async fn set_boost(&mut self, value: f64) -> TDPResult<()> {
         todo!()
     }
 
-    fn thermal_throttle_limit_c(&self) -> TDPResult<f64> {
+    async fn thermal_throttle_limit_c(&self) -> TDPResult<f64> {
         todo!()
     }
 
-    fn set_thermal_throttle_limit_c(&mut self, limit: f64) -> TDPResult<()> {
+    async fn set_thermal_throttle_limit_c(&mut self, limit: f64) -> TDPResult<()> {
         todo!()
     }
 
-    fn power_profile(&self) -> TDPResult<String> {
+    async fn power_profile(&self) -> TDPResult<String> {
         todo!()
     }
 
-    fn set_power_profile(&mut self, profile: String) -> TDPResult<()> {
+    async fn set_power_profile(&mut self, profile: String) -> TDPResult<()> {
         todo!()
     }
-
 }
