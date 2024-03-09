@@ -21,6 +21,9 @@ impl ASUS {
 
     /// test if we are in an asus system with asus-wmi loaded
     pub async fn new() -> Option<Self> {
+        // For now complile-time disable the usage of asus specific interface
+        return None;
+
         match RogPlatform::new() {
             Ok(platform) => {
                 log::info!("Module asus-wmi has been found -- scanning the dbus interface...");
